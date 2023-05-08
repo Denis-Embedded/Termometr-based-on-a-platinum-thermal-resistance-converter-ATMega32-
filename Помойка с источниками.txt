@@ -1,0 +1,3 @@
+https://www.nongnu.org/avr-libc/user-manual/group__avr__interrupts.html#gad28590624d422cdf30d626e0a506255f - библиотека прерываний
+https://izmerkon.ru/podderzhka/publikaczii/pribory-izmereniya-temperatury-promyshlennosti.html - о назначении термометров
+https://habr.com/ru/companies/efo/articles/312898/ - база по терморезисторам
