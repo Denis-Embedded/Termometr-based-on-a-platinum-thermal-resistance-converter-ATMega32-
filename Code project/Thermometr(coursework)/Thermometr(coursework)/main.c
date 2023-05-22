@@ -13,7 +13,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "Modbus/AVR_ModBus.h"
-#include "glcd.h"
+#include "GLCD/glcd.h"
+#include "Temperature Calculating/t_calc.h"
 
 extern volatile int16_t C_temp_code;
 extern volatile int16_t K_temp_code;
@@ -21,20 +22,20 @@ extern volatile int16_t F_temp_code;
 
 #define base 20 //отступ от края дисплея
 
-uint8_t g_key = 0;			//номер нажатой клавиши
-uint8_t g_key_status = 0;	//Если бит 7 равен 1, значит клавиша нажата.
+volatile uint8_t g_key = 0;			//номер нажатой клавиши
+volatile uint8_t g_key_status = 0;	//Если бит 7 равен 1, значит клавиша нажата.
 							//Если бит 6 равен 1, значит клавиша не отпущена
 							
-uint8_t mode = 0; //Режим отображения температуры
+volatile uint8_t mode = 0; //Режим отображения температуры
 /*
 1. mode == 0 - температура в градусах цельсия
 2. mode == 1 - температура в Кельвинах
 3. mode == 2 - температура в градусах Фаренгейта
 */
 
-uint8_t upd_flag = 0; //флаг, сигнализирующий об обновлении данных. Проверяются младшие биты
+volatile uint8_t upd_flag = 0; //флаг, сигнализирующий об обновлении данных. Проверяются младшие биты
 
-uint8_t TCI_counts = 0;                                                   
+volatile uint8_t TCI_counts = 0; //количество прерываний (нужно для формирования периода опроса дисплея)                                                  
 
 
 void glcd_init(void);
@@ -61,6 +62,7 @@ int main(void)
 		if(upd_flag)
 		{
 			scan_key();
+			get_temp();
 			display_result();
 			upd_flag = 0;
 		}
@@ -73,20 +75,20 @@ int main(void)
 				case 0:
 				{
 					mode = 0;
-					glcd_putchar((176),base+8*10,1,2,1); //символ градусов
-					glcd_puts("C",base+8*11,1,0,1,1);
+					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
+					glcd_puts("°C",base+8*10,1,0,1,1);
 				}
 				case 1:
 				{
 					mode = 1;
-					glcd_putchar('K', base+8*10,1,1,1);
-					glcd_putchar(' ', base+8*11,1,1,1);
+					glcd_puts("K ", base+8*10,1,0,1,1);
+					//glcd_putchar(' ', base+8*11,1,1,1);
 				}
 				case 2:
 				{
 					mode = 2;
-					glcd_putchar((176),base+8*10,1,2,1); //символ градусов
-					glcd_puts("F",base+8*11,1,0,1,1);
+					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
+					glcd_puts("°F",base+8*10,1,0,1,1);
 				}
 			}
 		}
@@ -116,7 +118,7 @@ void timer_init(void)
 	OCR2=249;			//запись константы 249 в регистр сравнения Т/С2
 	TCCR2=0b00001110;	//режим "сброс при совпадении" и делитель на 256
 	TIMSK|=0b10000000;  //разрешение прерывания по совпадению от Т/С2
-	TIFR |=0b11000000;   //очистка флагов прерываний Т/С2
+	TIFR &=0b11000000;   //очистка флагов прерываний Т/С2
 }
 
 void ADC_init(void)
@@ -185,7 +187,7 @@ void display_result(void)
 			glcd_putchar(' ', base+8*3, 1, 1, 1);
 		}
 		
-		uint8_t nums[4];
+		uint8_t nums[4] = {0,};
 		for (uint8_t i = 4; i > 0; --i) //преобразуем число в массив. в ячейке [0] лежит старший разряд
 		{
 			nums[i] = code_temp % 10 + 48;

@@ -8,14 +8,24 @@
 
 #include "t_calc.h"
 #include "AVR_ModBus.h"
-#include <string.h>
+//#include <string.h>
+
+//инициализация структур данных для хранения температуры
+volatile union temperature_t temp_C = {0};
+volatile union temperature_t temp_K = {0};
+volatile union temperature_t temp_F = {0};
+
+//переменные для вывода на графический индикатор
+volatile int16_t C_temp_code = 0;
+volatile int16_t K_temp_code = 0;
+volatile int16_t F_temp_code = 0;
 
 void get_temp(void)
 {
 	ADMUX=0b00000101;
 	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
 	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
-	C_temp_code = (ADCfactorK_C * ADC + ADCfactorB_C) >> 16;
+	C_temp_code = ((int32_t)ADCfactorK_C * ADC + (int32_t)ADCfactorB_C) >> 16;
 	temp_C.f_cell = (float)C_temp_code * 0.1f;
 	for (uint8_t i = 0; i < 2; ++i)
 	{
@@ -30,7 +40,7 @@ void get_temp(void)
 		RegNum3x[i+2] = temp_C.buff[i];
 	}
 	
-	F_temp_code = (ADCfactorK_F * ADC + ADCfactorB_F) >> 16;
+	F_temp_code = ((int32_t)ADCfactorK_F * ADC + (int32_t)ADCfactorB_F) >> 16;
 	temp_F.f_cell = (float)F_temp_code * 0.1f;
 	
 	for (uint8_t i = 0; i < 2; ++i)
