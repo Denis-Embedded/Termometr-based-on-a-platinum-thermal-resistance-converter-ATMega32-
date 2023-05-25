@@ -39,7 +39,8 @@ volatile uint8_t TCI_counts = 0; //количество прерываний (нужно для формирования
 
 
 void glcd_init(void);
-void draw_start_screen(void);
+void draw_loading_screen();
+void draw_main_screen(void);
 void display_result(void);
 
 void IO_init(void);
@@ -55,6 +56,8 @@ int main(void)
 	timer_init();
 	ADC_init();
 	InitModBus();
+	glcd_init();
+	draw_main_screen();
 	
 	asm("sei");
     while (1) 
@@ -63,7 +66,8 @@ int main(void)
 		{
 			scan_key();
 			get_temp();
-			display_result();
+			display_result();		
+			TCCR2=0b00001110;
 			upd_flag = 0;
 		}
 		
@@ -77,18 +81,21 @@ int main(void)
 					mode = 0;
 					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
 					glcd_puts("°C",base+8*10,1,0,1,1);
+					break;
 				}
 				case 1:
 				{
 					mode = 1;
 					glcd_puts("K ", base+8*10,1,0,1,1);
 					//glcd_putchar(' ', base+8*11,1,1,1);
+					break;
 				}
 				case 2:
 				{
 					mode = 2;
 					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
 					glcd_puts("°F",base+8*10,1,0,1,1);
+					break;
 				}
 			}
 		}
@@ -138,7 +145,7 @@ void glcd_init(void)
 }
 
 //функция отрисовки заставки
-void draw_start_screen()
+void draw_main_screen()
 {
 	rectangle(0,0,126,62,0,1);	//отрисовка внешнего контура
 	// вывод прямоугольников виртуальных "кнопок"
@@ -147,7 +154,7 @@ void draw_start_screen()
 	rectangle(45,35,81,59,0,1);
 	// вывод текстовой заставки
 	glcd_puts("T=",base,1,0,1,1);
-
+	glcd_puts("°C", base + 8 *10, 1, 0, 1, 1);
 	// Размещаем буквы в центр виртуальных "кнопок"
 	glcd_puts("C",16,5,0,2,1);
 	glcd_puts("K",57,5,0,2,1);
@@ -188,7 +195,7 @@ void display_result(void)
 		}
 		
 		uint8_t nums[4] = {0,};
-		for (uint8_t i = 4; i > 0; --i) //преобразуем число в массив. в ячейке [0] лежит старший разряд
+		for (int8_t i = 3; i > -1; --i) //преобразуем число в массив. в ячейке [0] лежит старший разряд
 		{
 			nums[i] = code_temp % 10 + 48;
 			code_temp = code_temp / 10;
@@ -198,7 +205,7 @@ void display_result(void)
 		uint8_t count = 0; //количество незначащих разрядов
 		while(count < 2)
 		{
-			if (nums[count]== '0')
+			if (nums[count]== 48)
 			{
 				++count;				//увеличиваем счетчик до первого ненулевого значения или до двух
 			}
@@ -212,11 +219,19 @@ void display_result(void)
 		{
 			glcd_putchar(nums[i], base+8*(cursor++), 1, 1, 1);
 		}
-		glcd_putchar('.', base + 8*(cursor++), 1, 1, 1);   //разделительная точка
-		glcd_putchar(nums[4], base + 8*(cursor++), 1, 1, 1); 
+// 		for (uint8_t i = 0; i < 3; ++i)
+// 		{
+// 			glcd_putchar(nums[i], base + 8 *(4 + i), 1,0,1);
+// 			
+// 		}
+		//glcd_putchar('.', base + 8*(cursor++), 1, 1, 1);   //разделительная точка
+/*		glcd_putchar('.', base + 8*7, 1,0,1);*/
+//		glcd_putchar(nums[3], base + 8 * 8, 1, 0, 1);
+		glcd_putchar('.', base + 8 * (cursor++), 1,0,1);
+		glcd_putchar(nums[3], base + 8*(cursor++), 1, 0, 1); 
 		for (uint8_t i = 0; i < count; ++i)
 		{
-			glcd_putchar(' ', base + 8*(cursor++), 1,1,1); //заполняем пробелами оставшиеся символы, если они есть
+			glcd_putchar(' ', base + 8*(cursor++), 1,0,1); //заполняем пробелами оставшиеся символы, если они есть
 		}
 		
 }
@@ -230,34 +245,30 @@ void scan_key(void)
 	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
 	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
 	// Отображаем координату на графическом дисплее
-	uint16_t x_coordinate=ADC;
+	volatile uint16_t x_coordinate=ADC;
 	PORTA=0b00001000;
 	_delay_ms(2);
 	ADMUX=0b00000001;
 	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
 	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
 	// Отображаем координату на графическом дисплее
-	uint16_t y_coordinate=ADC;
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>80)&&(x_coordinate<260))&&(g_key_status==0))
-	{
+	volatile uint16_t y_coordinate=ADC;
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>80)&&(x_coordinate<260))&&(g_key_status==0)){
 		g_key_status=0b11000000;
 		g_key=0;
 	}
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>330)&&(x_coordinate<490))&&(g_key_status==0))
-	{
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>330)&&(x_coordinate<490))&&(g_key_status==0)){
 		g_key_status=0b11000000;
 		g_key=1;
 	}
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>565)&&(x_coordinate<730))&&(g_key_status==0))
-	{
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>565)&&(x_coordinate<730))&&(g_key_status==0)){
 		g_key_status=0b11000000;
 		g_key=2;
 	}
 	if (((y_coordinate<20)&&(x_coordinate<20))&&(g_key_status&0b01000000)!=0){
-		g_key_status&=0b10000000;
+		g_key_status=g_key_status&0b10000000;
 	}
 
-	
 }
 
 ISR(TIMER2_COMP_vect)
@@ -267,6 +278,13 @@ ISR(TIMER2_COMP_vect)
 	if(TCI_counts == 10)
 	{
 		TCI_counts = 0;
+		TCCR2=0b00000000;
+
 		upd_flag = 1;
 	}
+}
+
+void draw_loading_screen()
+{
+	
 }
