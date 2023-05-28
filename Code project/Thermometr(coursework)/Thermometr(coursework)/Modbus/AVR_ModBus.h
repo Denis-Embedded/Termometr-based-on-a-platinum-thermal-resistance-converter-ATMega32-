@@ -40,7 +40,7 @@
 
 //ModBus
 //ID оборудования
-#define SLAVE_ID 0x0A
+#define DEFAULT_SLAVE_ID 0x0A
 //максимальный размер буфера принимаемых(Rx)/передаваемых(Tx) по UART данных, байт.
 #define MAX_LENGHT_REC_BUF 25
 #define MAX_LENGHT_TR_BUF 25
@@ -48,7 +48,7 @@
 #define QUANTITY_REG_0X 0 //количество дискретных выходов (DO) / r0x01, w0x05, w0x0F(15)
 #define QUANTITY_REG_1X 0 //количество дискретных входов (DI) / r0x02
 #define QUANTITY_REG_3X 6 //количество аналоговых входов (AI) / r0x04
-#define QUANTITY_REG_4X 0 //количество аналоговых выходов (AO) r0x03, w0x06, w0x10(16)
+#define QUANTITY_REG_4X 1 //количество аналоговых выходов (AO) r0x03, w0x06, w0x10(16)
 
 //запуск таймера0 для контроля паузы 3,5символа
 #define StartTimer0() TCCR0=1<<CS02;  TCNT0=130; 

@@ -14,7 +14,20 @@
 #include <avr/interrupt.h>
 #include "Modbus/AVR_ModBus.h"
 #include "GLCD/glcd.h"
+// #include "GLCD/KS0108.h"
+// #include "GLCD/Tahoma11x13.h"
 #include "Temperature Calculating/t_calc.h"
+
+
+const unsigned char paw[] PROGMEM =
+{
+	0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xef, 0xf0, 0xff, 0xcf, 0xf0, 0xfe, 0x4f, 0xf0, 0xfe,
+	0x4b, 0xf0, 0xfe, 0x43, 0xf0, 0xfe, 0x53, 0xf0, 0xfe, 0x63, 0xf0, 0xff, 0x23, 0xf0, 0xfe, 0x1f,
+	0xf0, 0xfc, 0x13, 0xf0, 0xfc, 0x13, 0xf0, 0xfc, 0x03, 0xf0, 0xfe, 0x03, 0xf0, 0xff, 0x17, 0xf0,
+	0xff, 0x9f, 0xf0, 0xff, 0xbf, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0
+};
+
+
 
 extern volatile int16_t C_temp_code;
 extern volatile int16_t K_temp_code;
@@ -47,6 +60,8 @@ void IO_init(void);
 void timer_init(void);
 void ADC_init(void);
 void scan_key(void);
+
+void draw_round_rectangle(uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, uint8_t radius);
 int main(void)
 {
     asm("cli");
@@ -57,9 +72,12 @@ int main(void)
 	ADC_init();
 	InitModBus();
 	glcd_init();
+
 	draw_main_screen();
-	
+	draw_loading_screen();
+		
 	asm("sei");
+
     while (1) 
     {
 		if(upd_flag)
@@ -80,13 +98,13 @@ int main(void)
 				{
 					mode = 0;
 					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
-					glcd_puts("°C",base+8*10,1,0,1,1);
+					glcd_puts("°C",base+8*9,1,0,1,1);
 					break;
 				}
 				case 1:
 				{
 					mode = 1;
-					glcd_puts("K ", base+8*10,1,0,1,1);
+					glcd_puts(" K", base+8*9,1,0,1,1);
 					//glcd_putchar(' ', base+8*11,1,1,1);
 					break;
 				}
@@ -94,7 +112,7 @@ int main(void)
 				{
 					mode = 2;
 					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
-					glcd_puts("°F",base+8*10,1,0,1,1);
+					glcd_puts("°F",base+8*9,1,0,1,1);
 					break;
 				}
 			}
@@ -147,14 +165,22 @@ void glcd_init(void)
 //функция отрисовки заставки
 void draw_main_screen()
 {
-	rectangle(0,0,126,62,0,1);	//отрисовка внешнего контура
+	//rectangle(0,0,126,62,0,1);	//отрисовка внешнего контура
+	draw_round_rectangle(0,0,126,62, 8);
 	// вывод прямоугольников виртуальных "кнопок"
-	rectangle(5,35,40,59,0,1);
-	rectangle(86,35,121,59,0,1);
-	rectangle(45,35,81,59,0,1);
+	draw_round_rectangle(5,35,40,59, 8);
+	draw_round_rectangle(86,35,121,59,8);
+	draw_round_rectangle(45,35,81,59,8);
 	// вывод текстовой заставки
+	
+// 	point_at(15, 5, 1);
+// 	point_at(15, 17, 1);
+// 	point_at(92+21, 5, 1);
+// 	point_at((92+21), 17, 1);
+	
+	draw_round_rectangle(15,5,113,17, 6);
 	glcd_puts("T=",base,1,0,1,1);
-	glcd_puts("°C", base + 8 *10, 1, 0, 1, 1);
+	glcd_puts("°C", base + 8 *9, 1, 0, 1, 1);
 	// Размещаем буквы в центр виртуальных "кнопок"
 	glcd_puts("C",16,5,0,2,1);
 	glcd_puts("K",57,5,0,2,1);
@@ -286,5 +312,47 @@ ISR(TIMER2_COMP_vect)
 
 void draw_loading_screen()
 {
+	glcd_puts("", )
+}
+
+void draw_round_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t radius)
+{
+	int16_t tSwitch = 3 - 2 * radius;
+	uint8_t width, height, x, y;
+	width = x2-x1;
+	height = y2-y1;
+	x = 0;
+	y = radius;
 	
+	h_line(x1 + radius, y1, width - 2 * radius, 0, 1);
+	h_line(x1 + radius, y2, width - 2 * radius, 0, 1);
+	v_line(x1, y1 + radius, height - 2 * radius, 0, 1);
+	v_line(x2, y1 + radius, height - 2 * radius, 0, 1);
+	 while (x <= y)
+	 {
+		 point_at(x1 + radius - x, y1 + radius - y, 1);
+		 point_at (x1 + radius - y, y1 + radius - x, 1);
+		 
+		 point_at(x1 + width - radius + x, y1 + radius - y, 1);
+		 point_at (x1 + width - radius + y, y1 + radius - x, 1);
+		 
+		 point_at(x1 + radius - x, y1 + height - radius + y, 1);
+		 point_at (x1 + radius - y, y1 + height - radius + x, 1);
+		 
+		 point_at(x1 + width - radius + x, y1 + height - radius + y, 1);
+		 point_at (x1 + width - radius + y, y1 + height - radius + x, 1);	
+		 
+		if (tSwitch < 0)
+		{
+			tSwitch += 4 * x + 6;
+		}
+		else
+		{
+			tSwitch += 4 * (x-y) + 10;
+			--y;
+		}
+		++x;
+	 }
+	 
+
 }

@@ -15,6 +15,9 @@ unsigned char cNumRcByte0; //кол-во принятых байт
 unsigned char cNumTrByte0;  //кол-во передаваемых байт
 unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF] ; //буфер принимаемых данных
 unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF] ; //буфер передаваемых данных
+unsigned char Slave_ID = DEFAULT_SLAVE_ID;
+
+unsigned char Change_Parametrs_Is_Recieved = 0; //Если равна 1, значит пришел пакет с новыми настройками устройства
 
 unsigned char ModBus(unsigned char NumByte);
 char Func01(void);
@@ -65,7 +68,7 @@ unsigned char ModBus(unsigned char NumByte)
 int CRC16;
 unsigned char i;
 
-if (cmRcBuf0[0]!=SLAVE_ID) return 0x00; //broadcast запрос, ответ не нужен
+if (cmRcBuf0[0]!= Slave_ID) return 0x00; //broadcast запрос, ответ не нужен
 
 CRC16 = GetCRC16(cmRcBuf0, NumByte);
 if (CRC16) return 0;  //контрольная сумма не совпадает, ответ не нужен
@@ -75,7 +78,7 @@ if (CRC16) return 0;  //контрольная сумма не совпадает, ответ не нужен
 //!!!!! адреса и данные двубайтные заносятся старшим байтом вперед (Hi, Low)
 //!!!!! CRC заноситься младшим байтом вперед (Low, Hi) 
 
-cmTrBuf0[0]=SLAVE_ID;//адрес устройства
+cmTrBuf0[0]=Slave_ID;//адрес устройства
 
 for(i=1; i<(MAX_LENGHT_TR_BUF); i++) //очищаем буфер для данных
 	{
@@ -338,6 +341,7 @@ if(!(reg_adress<=QUANTITY_REG_4X)) return ErrorMessage(0x02); //Адрес данных, ук
 if(1)//при необходимости поставить контроль значений
 	{
 	RegNum4x[reg_adress] = value;
+	Change_Parametrs_Is_Recieved = 1; 
 	cmTrBuf0[1] = cmRcBuf0[1];
 	cmTrBuf0[2] = cmRcBuf0[2];
 	cmTrBuf0[3] = cmRcBuf0[3];
