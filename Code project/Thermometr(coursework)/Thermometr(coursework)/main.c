@@ -12,10 +12,9 @@
 #include <util/delay.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
 #include "Modbus/AVR_ModBus.h"
 #include "GLCD/glcd.h"
-// #include "GLCD/KS0108.h"
-// #include "GLCD/Tahoma11x13.h"
 #include "Temperature Calculating/t_calc.h"
 
 
@@ -35,20 +34,20 @@ extern volatile int16_t F_temp_code;
 
 #define base 20 //отступ от края дисплея
 
-volatile uint8_t g_key = 0;			//номер нажатой клавиши
+volatile uint8_t g_key = 0;		//номер нажатой клавиши
 volatile uint8_t g_key_status = 0;	//Если бит 7 равен 1, значит клавиша нажата.
-							//Если бит 6 равен 1, значит клавиша не отпущена
+					//Если бит 6 равен 1, значит клавиша не отпущена
 							
 volatile uint8_t mode = 0; //Режим отображения температуры
 /*
-1. mode == 0 - температура в градусах цельсия
+1. mode == 0 - температура в градусах Цельсия
 2. mode == 1 - температура в Кельвинах
 3. mode == 2 - температура в градусах Фаренгейта
 */
 
-volatile uint8_t upd_flag = 0; //флаг, сигнализирующий об обновлении данных. Проверяются младшие биты
+volatile uint8_t upd_flag = 0; //флаг, сигнализирующий об обновлении данных
 
-volatile uint8_t TCI_counts = 0; //количество прерываний (нужно для формирования периода опроса дисплея)                                                  
+volatile uint8_t TCI_counts = 0; //количество прерываний таймера 2                                                  
 
 
 void glcd_init(void);
@@ -64,9 +63,8 @@ void scan_key(void);
 void draw_round_rectangle(uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, uint8_t radius);
 int main(void)
 {
-    asm("cli");
-	/* Replace with your application code */
-	//InitModBus();
+    	asm("cli");
+
 	IO_init();
 	timer_init();
 	ADC_init();
@@ -74,7 +72,6 @@ int main(void)
 	glcd_init();
 
 	draw_main_screen();
-	draw_loading_screen();
 		
 	asm("sei");
 
@@ -85,7 +82,6 @@ int main(void)
 			scan_key();
 			get_temp();
 			display_result();		
-			TCCR2=0b00001110;
 			upd_flag = 0;
 		}
 		
@@ -124,7 +120,7 @@ int main(void)
 
 void IO_init(void)
 {
-	DDRA |=0b00001100;  //инициализация портов
+	DDRA |=0b00001100;  	//инициализация портов
 	PORTA |=0b00000100;	//для сенсерной панели управления
 	
 	DDRB |=0b11100011;  
@@ -140,15 +136,15 @@ void timer_init(void)
 {
 	//настройка на срабатывание Т/С2 с интервалом 8 мс
 	TCNT2=0b00000000;	//очистка Т/С2
-	OCR2=249;			//запись константы 249 в регистр сравнения Т/С2
+	OCR2=249;		//запись константы 249 в регистр сравнения Т/С2
 	TCCR2=0b00001110;	//режим "сброс при совпадении" и делитель на 256
-	TIMSK|=0b10000000;  //разрешение прерывания по совпадению от Т/С2
-	TIFR &=0b11000000;   //очистка флагов прерываний Т/С2
+	TIMSK|=0b10000000;  	//разрешение прерывания по совпадению от Т/С2
+	TIFR &=0b11000000;   	//очистка флагов прерываний Т/С2
 }
 
 void ADC_init(void)
 {
-	ADMUX = 0b00000000; //Используется 2 канала АЦП - ADC0 и ADC5
+	ADMUX = 0b00000000; 
 	ADCSRA = 0b10000111; //ADEN | предделитель АЦП 128
 };
 
@@ -156,28 +152,21 @@ void ADC_init(void)
 void glcd_init(void)
 {
 	_delay_ms(100);
-	glcd_off();			//выключаем дисплей
+	glcd_off();		//выключаем дисплей
 	_delay_ms(100);
-	glcd_on();			//включаем после задержки
+	glcd_on();		//включаем после задержки
 	glcd_clear();		//очистка дисплея
 }
 
 //функция отрисовки заставки
 void draw_main_screen()
-{
-	//rectangle(0,0,126,62,0,1);	//отрисовка внешнего контура
-	draw_round_rectangle(0,0,126,62, 8);
-	// вывод прямоугольников виртуальных "кнопок"
+{						
+	draw_round_rectangle(0,0,126,62, 8);	//отрисовка внешнего контура
+	// вывод границ виртуальных "кнопок"
 	draw_round_rectangle(5,35,40,59, 8);
 	draw_round_rectangle(86,35,121,59,8);
 	draw_round_rectangle(45,35,81,59,8);
-	// вывод текстовой заставки
-	
-// 	point_at(15, 5, 1);
-// 	point_at(15, 17, 1);
-// 	point_at(92+21, 5, 1);
-// 	point_at((92+21), 17, 1);
-	
+	// вывод текстовой заставки	
 	draw_round_rectangle(15,5,113,17, 6);
 	glcd_puts("T=",base,1,0,1,1);
 	glcd_puts("°C", base + 8 *9, 1, 0, 1, 1);
@@ -233,7 +222,7 @@ void display_result(void)
 		{
 			if (nums[count]== 48)
 			{
-				++count;				//увеличиваем счетчик до первого ненулевого значения или до двух
+				++count; //увеличиваем счетчик до первого ненулевого значения или до двух
 			}
 			else
 			{
@@ -245,15 +234,8 @@ void display_result(void)
 		{
 			glcd_putchar(nums[i], base+8*(cursor++), 1, 1, 1);
 		}
-// 		for (uint8_t i = 0; i < 3; ++i)
-// 		{
-// 			glcd_putchar(nums[i], base + 8 *(4 + i), 1,0,1);
-// 			
-// 		}
-		//glcd_putchar('.', base + 8*(cursor++), 1, 1, 1);   //разделительная точка
-/*		glcd_putchar('.', base + 8*7, 1,0,1);*/
-//		glcd_putchar(nums[3], base + 8 * 8, 1, 0, 1);
-		glcd_putchar('.', base + 8 * (cursor++), 1,0,1);
+
+		glcd_putchar('.', base + 8 * (cursor++), 1,0,1); //разделительная точка
 		glcd_putchar(nums[3], base + 8*(cursor++), 1, 0, 1); 
 		for (uint8_t i = 0; i < count; ++i)
 		{
@@ -291,8 +273,8 @@ void scan_key(void)
 		g_key_status=0b11000000;
 		g_key=2;
 	}
-	if (((y_coordinate<20)&&(x_coordinate<20))&&(g_key_status&0b01000000)!=0){
-		g_key_status=g_key_status&0b10000000;
+	if (((y_coordinate<20)&&(x_coordinate<20))&&(g_key_status&0b01000000)!=0){ //если нет замыкания между слоями панели после нажатия
+		g_key_status=g_key_status&0b10000000; //значит виртуальная кнопка отпущена
 	}
 
 }
@@ -304,7 +286,7 @@ ISR(TIMER2_COMP_vect)
 	if(TCI_counts == 10)
 	{
 		TCI_counts = 0;
-		TCCR2=0b00000000;
+
 
 		upd_flag = 1;
 	}
@@ -353,6 +335,4 @@ void draw_round_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_
 		}
 		++x;
 	 }
-	 
-
 }
