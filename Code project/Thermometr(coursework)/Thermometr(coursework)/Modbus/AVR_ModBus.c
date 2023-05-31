@@ -9,15 +9,16 @@
 #define Low(Int) (char) (Int)
 
 unsigned char RcCount, TrCount;  //счетчик принятых/переданных данных
-bool StartRec = false;// false/true начало/прием посылки
-bool bModBus = false;  //флаг обработки посылки
-unsigned char cNumRcByte0; //кол-во принятых байт
+bool StartRec = false;	// false/true начало/прием посылки
+bool bModBus = false;	//флаг обработки посылки
+unsigned char cNumRcByte0;	//кол-во принятых байт
 unsigned char cNumTrByte0;  //кол-во передаваемых байт
 unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF] ; //буфер принимаемых данных
 unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF] ; //буфер передаваемых данных
-unsigned char Slave_ID = DEFAULT_SLAVE_ID;
+volatile unsigned char Slave_ID = DEFAULT_SLAVE_ID;
 
-unsigned char Change_Parametrs_Is_Recieved = 0; //Если равна 1, значит пришел пакет с новыми настройками устройства
+unsigned char Change_Parametrs_Is_Recieved = 0; //Если равна 1, значит пришел пакет с новыми настройками скорости передачи устройства
+volatile unsigned char Baud_Divider = BAUD_DIVIDER;		//текущий делитель для регистров UBRR
 
 unsigned char ModBus(unsigned char NumByte);
 char Func01(void);
@@ -338,10 +339,11 @@ if(!(reg_adress<=QUANTITY_REG_4X)) return ErrorMessage(0x02); //Адрес данных, ук
 //проверка корректных данных в запросе
 
 //формируем ответ, возвращая полученное сообщение
-if(1)//при необходимости поставить контроль значений
+if((reg_adress == 0) && ((value == 9600) || (value == 14400) || (value == 19200) || (value == 38400) || (value == 57600)))//при необходимости поставить контроль значений
 	{
+
 	RegNum4x[reg_adress] = value;
-	Change_Parametrs_Is_Recieved = 1; 
+	Change_Parametrs_Is_Recieved = 1;
 	cmTrBuf0[1] = cmRcBuf0[1];
 	cmTrBuf0[2] = cmRcBuf0[2];
 	cmTrBuf0[3] = cmRcBuf0[3];
@@ -349,8 +351,23 @@ if(1)//при необходимости поставить контроль значений
 	cmTrBuf0[5] = cmRcBuf0[5];
 	cmTrBuf0[6] = cmRcBuf0[6];
 	cmTrBuf0[7] = cmRcBuf0[7];
+	Baud_Divider = F_CPU/(RegNum4x[reg_adress] * 16.0) - 1;
+	
 	return 8;
 	} //end if()
+else if ((reg_adress == 1) && (value < 248))
+{
+	RegNum4x[reg_adress] = value;
+	cmTrBuf0[1] = cmRcBuf0[1];
+	cmTrBuf0[2] = cmRcBuf0[2];
+	cmTrBuf0[3] = cmRcBuf0[3];
+	cmTrBuf0[4] = cmRcBuf0[4];
+	cmTrBuf0[5] = cmRcBuf0[5];
+	cmTrBuf0[6] = cmRcBuf0[6];
+	cmTrBuf0[7] = cmRcBuf0[7];
+	Slave_ID = RegNum4x[reg_adress];
+	return 8;
+}
 else
 	{
 	return ErrorMessage(0x03);//Значение, содержащееся в поле данных запроса, является недопустимой величиной
@@ -412,6 +429,13 @@ else
 	{
     StopTrans();
     TrCount=0;
+	if (Change_Parametrs_Is_Recieved == 1)
+	{
+		Change_Parametrs_Is_Recieved = 0;
+		UBRRHi = Hi(Baud_Divider);
+		UBRRLow = Low(Baud_Divider);
+	}
+
 	} //end else
 }//end ISR(USART_UDRE_vect)
 

@@ -17,17 +17,6 @@
 #include "GLCD/glcd.h"
 #include "Temperature Calculating/t_calc.h"
 
-
-const unsigned char paw[] PROGMEM =
-{
-	0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xef, 0xf0, 0xff, 0xcf, 0xf0, 0xfe, 0x4f, 0xf0, 0xfe,
-	0x4b, 0xf0, 0xfe, 0x43, 0xf0, 0xfe, 0x53, 0xf0, 0xfe, 0x63, 0xf0, 0xff, 0x23, 0xf0, 0xfe, 0x1f,
-	0xf0, 0xfc, 0x13, 0xf0, 0xfc, 0x13, 0xf0, 0xfc, 0x03, 0xf0, 0xfe, 0x03, 0xf0, 0xff, 0x17, 0xf0,
-	0xff, 0x9f, 0xf0, 0xff, 0xbf, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0
-};
-
-
-
 extern volatile int16_t C_temp_code;
 extern volatile int16_t K_temp_code;
 extern volatile int16_t F_temp_code;
@@ -86,14 +75,13 @@ int main(void)
 		}
 		
 		if ((g_key_status &0b10000000) != 0)
-		{
-			g_key_status &= 0b01000000;
+		{//Если клавиша нажата
+			g_key_status &= 0b01000000; //сбросить бит, отвечающий за факт нажатия
 			switch (g_key)
-			{
+			{//поменять режим в зависимости от нажатой кнопки
 				case 0:
 				{
 					mode = 0;
-					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
 					glcd_puts("°C",base+8*9,1,0,1,1);
 					break;
 				}
@@ -101,13 +89,11 @@ int main(void)
 				{
 					mode = 1;
 					glcd_puts(" K", base+8*9,1,0,1,1);
-					//glcd_putchar(' ', base+8*11,1,1,1);
 					break;
 				}
 				case 2:
 				{
 					mode = 2;
-					//glcd_putchar((176),base+8*10,1,2,1); //символ градусов
 					glcd_puts("°F",base+8*9,1,0,1,1);
 					break;
 				}
@@ -247,33 +233,36 @@ void display_result(void)
 
 void scan_key(void)
 {
-	PORTA=0b00000100;       //
+	PORTA=0b00000100;       
 	_delay_ms(2);			// Задержка !!! (паразитная емкость должна зарядиться)
 	ADMUX=0b00000000;		// Выбираем нулевой канал АЦП
-	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
-	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
-	// Отображаем координату на графическом дисплее
+	ADCSRA|=(1<<ADSC);		// Запуск АЦП
+	while ((ADCSRA&(1<<ADSC))!=0); 	// Ожидаем конца преобразования АЦП
 	volatile uint16_t x_coordinate=ADC;
+
 	PORTA=0b00001000;
 	_delay_ms(2);
-	ADMUX=0b00000001;
-	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
-	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
-	// Отображаем координату на графическом дисплее
+	ADMUX=0b00000001;		// Смена канала
+	ADCSRA|=(1<<ADSC);		// Запуск АЦП 
+	while ((ADCSRA&(1<<ADSC))!=0); 	// Ожидаем конца преобразования АЦП
 	volatile uint16_t y_coordinate=ADC;
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>80)&&(x_coordinate<260))&&(g_key_status==0)){
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>80)&&(x_coordinate<260))&&(g_key_status==0))
+	{ //Регистрация нажатия кнопки "C"
 		g_key_status=0b11000000;
 		g_key=0;
 	}
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>330)&&(x_coordinate<490))&&(g_key_status==0)){
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>330)&&(x_coordinate<490))&&(g_key_status==0))
+	{ //Регистрация нажатия кнопки "K"
 		g_key_status=0b11000000;
 		g_key=1;
 	}
-	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>565)&&(x_coordinate<730))&&(g_key_status==0)){
+	if (((y_coordinate>190)&&(y_coordinate<370))&&((x_coordinate>565)&&(x_coordinate<730))&&(g_key_status==0))
+	{ //Регистрация нажатия кнопки "F"
 		g_key_status=0b11000000;
 		g_key=2;
 	}
-	if (((y_coordinate<20)&&(x_coordinate<20))&&(g_key_status&0b01000000)!=0){ //если нет замыкания между слоями панели после нажатия
+	if (((y_coordinate<20)&&(x_coordinate<20))&&(g_key_status&0b01000000)!=0)
+	{ //если нет замыкания между слоями панели после нажатия
 		g_key_status=g_key_status&0b10000000; //значит виртуальная кнопка отпущена
 	}
 
@@ -292,10 +281,10 @@ ISR(TIMER2_COMP_vect)
 	}
 }
 
-void draw_loading_screen()
-{
-	glcd_puts("", )
-}
+// void draw_loading_screen()
+// {
+// 	glcd_puts("", )
+// }
 
 void draw_round_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t radius)
 {
@@ -312,15 +301,19 @@ void draw_round_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_
 	v_line(x2, y1 + radius, height - 2 * radius, 0, 1);
 	 while (x <= y)
 	 {
+		 //левый верхний угол
 		 point_at(x1 + radius - x, y1 + radius - y, 1);
 		 point_at (x1 + radius - y, y1 + radius - x, 1);
 		 
+		 //правый верхний угол
 		 point_at(x1 + width - radius + x, y1 + radius - y, 1);
 		 point_at (x1 + width - radius + y, y1 + radius - x, 1);
 		 
+		 //левый нижний угол
 		 point_at(x1 + radius - x, y1 + height - radius + y, 1);
 		 point_at (x1 + radius - y, y1 + height - radius + x, 1);
 		 
+		 //правый нижний угол
 		 point_at(x1 + width - radius + x, y1 + height - radius + y, 1);
 		 point_at (x1 + width - radius + y, y1 + height - radius + x, 1);	
 		 

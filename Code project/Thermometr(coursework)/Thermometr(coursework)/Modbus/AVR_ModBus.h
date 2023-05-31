@@ -48,7 +48,8 @@
 #define QUANTITY_REG_0X 0 //количество дискретных выходов (DO) / r0x01, w0x05, w0x0F(15)
 #define QUANTITY_REG_1X 0 //количество дискретных входов (DI) / r0x02
 #define QUANTITY_REG_3X 6 //количество аналоговых входов (AI) / r0x04
-#define QUANTITY_REG_4X 1 //количество аналоговых выходов (AO) r0x03, w0x06, w0x10(16)
+#define QUANTITY_REG_4X 2 //количество аналоговых выходов (AO) r0x03, w0x06, w0x10(16)
+//Адреса 4х: 0 - скорость передачи, 1 - адрес
 
 //запуск таймера0 для контроля паузы 3,5символа
 #define StartTimer0() TCCR0=1<<CS02;  TCNT0=130; 
