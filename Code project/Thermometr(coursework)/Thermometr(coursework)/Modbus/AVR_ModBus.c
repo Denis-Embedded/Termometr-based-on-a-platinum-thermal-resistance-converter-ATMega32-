@@ -17,7 +17,7 @@ unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF] ; //буфер принимаемых данных
 unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF] ; //буфер передаваемых данных
 volatile unsigned char Slave_ID = DEFAULT_SLAVE_ID;
 
-unsigned char Change_Parametrs_Is_Recieved = 0; //≈сли равна 1, значит пришел пакет с новыми настройками скорости передачи устройства
+volatile unsigned char Change_Parametrs_Is_Recieved = 0; //≈сли равна 1, значит пришел пакет с новыми настройками скорости передачи устройства
 volatile unsigned char Baud_Divider = BAUD_DIVIDER;		//текущий делитель дл€ регистров UBRR
 
 unsigned char ModBus(unsigned char NumByte);
@@ -421,12 +421,12 @@ else  // (StartRec==0) //продолжаем прием
 ISR(USART_UDRE_vect)
 {
 if (TrCount<cNumTrByte0)
-	{
+{
     UDR=cmTrBuf0[TrCount];
     TrCount++;
-	} //end if
+} //end if
 else
-	{
+{
     StopTrans();
     TrCount=0;
 	if (Change_Parametrs_Is_Recieved == 1)
@@ -436,7 +436,7 @@ else
 		UBRRLow = Low(Baud_Divider);
 	}
 
-	} //end else
+} //end else
 }//end ISR(USART_UDRE_vect)
 
 

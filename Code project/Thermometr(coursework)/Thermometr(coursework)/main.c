@@ -61,6 +61,9 @@ int main(void)
 	glcd_init();
 
 	draw_main_screen();
+	
+	RegNum4x[0] = BAUD_RATE;		//скорость передачи по умолчанию
+	RegNum4x[1] = DEFAULT_SLAVE_ID; //адрес устройства по умолчанию
 		
 	asm("sei");
 
@@ -99,8 +102,7 @@ int main(void)
 				}
 			}
 		}
-		CheckModBus();
-		
+		CheckModBus();		
     }
 }
 

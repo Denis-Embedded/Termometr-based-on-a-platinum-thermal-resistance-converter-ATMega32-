@@ -23,8 +23,8 @@ volatile int16_t F_temp_code = 0;
 void get_temp(void)
 {
 	ADMUX=0b00000101;
-	ADCSRA|=(1<<ADSC);		// запускаем АЦП ( аналогично ADCSRA=((ADCSRA|0b01000000));
-	while ((ADCSRA&(1<<ADSC))!=0); //ожидаем конца преобразования АЦП
+	ADCSRA|=(1<<ADSC);		// запуск АЦП;
+	while ((ADCSRA&(1<<ADSC))!=0); //ожидание конца преобразования АЦП
 	C_temp_code = ((int32_t)ADCfactorK_C * ADC + (int32_t)ADCfactorB_C) >> 16;
 	temp_C.f_cell = (float)C_temp_code * 0.1f;
 	for (uint8_t i = 0; i < 2; ++i)
