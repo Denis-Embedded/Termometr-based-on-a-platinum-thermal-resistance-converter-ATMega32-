@@ -7,7 +7,6 @@
 
 #define F_CPU 8000000UL
 
-
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <avr/io.h>
@@ -282,11 +281,6 @@ ISR(TIMER2_COMP_vect)
 		upd_flag = 1;
 	}
 }
-
-// void draw_loading_screen()
-// {
-// 	glcd_puts("", )
-// }
 
 void draw_round_rectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t radius)
 {
