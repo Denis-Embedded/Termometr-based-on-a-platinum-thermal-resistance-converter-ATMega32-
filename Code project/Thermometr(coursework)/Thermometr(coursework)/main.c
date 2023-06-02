@@ -51,7 +51,7 @@ void scan_key(void);
 void draw_round_rectangle(uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, uint8_t radius);
 int main(void)
 {
-    	asm("cli");
+    asm("cli");
 
 	IO_init();
 	timer_init();
@@ -165,70 +165,69 @@ void draw_main_screen()
 
 void display_result(void)
 {
-		int16_t code_temp = 0;
+	int16_t code_temp = 0;
 
-		switch(mode)
+	switch(mode)
+	{
+		case 0:
 		{
-			case 0:
-			{
-				code_temp = C_temp_code;
-				break;
-			}
-			case 1: 
-			{
-				code_temp = K_temp_code;
-				break;				
-			}
-			case 2:
-			{
-				code_temp = F_temp_code;
-				break;
-			}
+			code_temp = C_temp_code;
+			break;
 		}
-		
-		if (code_temp < 0)
+		case 1: 
 		{
-			glcd_putchar('-', base+8*3, 1, 1, 1);
-			code_temp = -code_temp;
+			code_temp = K_temp_code;
+			break;				
+		}
+		case 2:
+		{
+			code_temp = F_temp_code;
+			break;
+		}
+	}
+		
+	if (code_temp < 0)
+	{
+		glcd_putchar('-', base+8*3, 1, 1, 1);
+		code_temp = -code_temp;
+	}
+	else
+	{
+		glcd_putchar(' ', base+8*3, 1, 1, 1);
+	}
+		
+	uint8_t nums[4] = {0,};
+	for (int8_t i = 3; i > -1; --i) //преобразуем число в массив. в ячейке [0] лежит старший разряд
+	{
+		nums[i] = code_temp % 10 + 48;
+		code_temp = code_temp / 10;
+	}
+		
+	uint8_t cursor = 4;//текущая координата виртуального курсора
+	uint8_t count = 0; //количество незначащих разрядов
+	while(count < 2)
+	{
+		if (nums[count]== 48)
+		{
+			++count; //увеличиваем счетчик до первого ненулевого значения или до двух
 		}
 		else
 		{
-			glcd_putchar(' ', base+8*3, 1, 1, 1);
+			break; 
 		}
+	}
 		
-		uint8_t nums[4] = {0,};
-		for (int8_t i = 3; i > -1; --i) //преобразуем число в массив. в ячейке [0] лежит старший разряд
-		{
-			nums[i] = code_temp % 10 + 48;
-			code_temp = code_temp / 10;
-		}
-		
-		uint8_t cursor = 4;//текущая координата виртуального курсора
-		uint8_t count = 0; //количество незначащих разрядов
-		while(count < 2)
-		{
-			if (nums[count]== 48)
-			{
-				++count; //увеличиваем счетчик до первого ненулевого значения или до двух
-			}
-			else
-			{
-				break; 
-			}
-		}
-		
-		for (uint8_t i = count; i < 3; ++i)
-		{
-			glcd_putchar(nums[i], base+8*(cursor++), 1, 1, 1);
-		}
+	for (uint8_t i = count; i < 3; ++i)
+	{
+		glcd_putchar(nums[i], base+8*(cursor++), 1, 1, 1);
+	}
 
-		glcd_putchar('.', base + 8 * (cursor++), 1,0,1); //разделительная точка
-		glcd_putchar(nums[3], base + 8*(cursor++), 1, 0, 1); 
-		for (uint8_t i = 0; i < count; ++i)
-		{
-			glcd_putchar(' ', base + 8*(cursor++), 1,0,1); //заполняем пробелами оставшиеся символы, если они есть
-		}
-		
+	glcd_putchar('.', base + 8 * (cursor++), 1,0,1); //разделительная точка
+	glcd_putchar(nums[3], base + 8*(cursor++), 1, 0, 1); 
+	for (uint8_t i = 0; i < count; ++i)
+	{
+		glcd_putchar(' ', base + 8*(cursor++), 1,0,1); //заполняем пробелами оставшиеся символы, если они есть
+	}
 }
 
 
