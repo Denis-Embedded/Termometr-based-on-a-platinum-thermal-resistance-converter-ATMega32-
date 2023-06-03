@@ -37,6 +37,8 @@ volatile uint8_t upd_flag = 0; //флаг, сигнализирующий об обновлении данных
 
 volatile uint8_t TCI_counts = 0; //количество прерываний таймера 2                                                  
 
+RegNum4x[0] = BAUD_RATE;	//скорость передачи по умолчанию
+RegNum4x[1] = DEFAULT_SLAVE_ID; //адрес устройства по умолчанию
 
 void glcd_init(void);
 void draw_loading_screen();
@@ -60,9 +62,6 @@ int main(void)
 	glcd_init();
 
 	draw_main_screen();
-	
-	RegNum4x[0] = BAUD_RATE;		//скорость передачи по умолчанию
-	RegNum4x[1] = DEFAULT_SLAVE_ID; //адрес устройства по умолчанию
 		
 	asm("sei");
 

@@ -17,8 +17,9 @@ unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF] ; //буфер принимаемых данных
 unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF] ; //буфер передаваемых данных
 volatile unsigned char Slave_ID = DEFAULT_SLAVE_ID;
 
-volatile unsigned char Change_Parametrs_Is_Recieved = 0; //Если равна 1, значит пришел пакет с новыми настройками скорости передачи устройства
-volatile unsigned char Baud_Divider = BAUD_DIVIDER;		//текущий делитель для регистров UBRR
+volatile unsigned char Change_Parametrs_Is_Recieved = 0;//Если равна 1, значит пришел пакет с новыми настройками 
+							//скорости передачи устройства
+volatile unsigned char Baud_Divider = BAUD_DIVIDER;	//текущий делитель для регистров UBRR
 
 unsigned char ModBus(unsigned char NumByte);
 char Func01(void);
@@ -339,8 +340,9 @@ if(!(reg_adress<=QUANTITY_REG_4X)) return ErrorMessage(0x02); //Адрес данных, ук
 //проверка корректных данных в запросе
 
 //формируем ответ, возвращая полученное сообщение
-if((reg_adress == 0) && ((value == 9600) || (value == 14400) || (value == 19200) || (value == 38400) || (value == 57600)))//при необходимости поставить контроль значений
-	{
+if((reg_adress == 0) && ((value == 9600) || (value == 14400) 
+|| (value == 19200) || (value == 38400) || (value == 57600)))//при необходимости поставить контроль значений
+{
 
 	RegNum4x[reg_adress] = value;
 	Change_Parametrs_Is_Recieved = 1;
@@ -354,7 +356,7 @@ if((reg_adress == 0) && ((value == 9600) || (value == 14400) || (value == 19200)
 	Baud_Divider = F_CPU/(RegNum4x[reg_adress] * 16.0) - 1;
 	
 	return 8;
-	} //end if()
+} //end if()
 else if ((reg_adress == 1) && (value < 248))
 {
 	RegNum4x[reg_adress] = value;
@@ -369,9 +371,9 @@ else if ((reg_adress == 1) && (value < 248))
 	return 8;
 }
 else
-	{
+{
 	return ErrorMessage(0x03);//Значение, содержащееся в поле данных запроса, является недопустимой величиной
-	}
+}
 return 0;
 } //end Func06(void)
 
