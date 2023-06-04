@@ -8,7 +8,6 @@
 
 #include "t_calc.h"
 #include "AVR_ModBus.h"
-//#include <string.h>
 
 //инициализация структур данных для хранения температуры
 volatile union temperature_t temp_C = {0};
