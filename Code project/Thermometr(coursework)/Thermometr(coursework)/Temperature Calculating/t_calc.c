@@ -28,8 +28,8 @@ void get_temp(void)
 	C_temp_code = ((int32_t)ADCfactorK_C * ADC + (int32_t)ADCfactorB_C) >> 16;
 	temp_C.f_cell = (float)C_temp_code * 0.1f;
 	for (uint8_t i = 0; i < 2; ++i)
-	{
-		RegNum3x[i] = temp_C.buff[i];
+	{//байты хранятся в памяти мк в порядке "от младшего к старшему"
+		RegNum3x[i] = temp_C.buff[1 - i];
 	}
 	
 	
@@ -37,7 +37,7 @@ void get_temp(void)
 	temp_K.f_cell = (float)K_temp_code * 0.1f;
 	for (uint8_t i = 0; i < 2; ++i)
 	{
-		RegNum3x[i+2] = temp_C.buff[i];
+		RegNum3x[i+2] = temp_K.buff[1 - i];
 	}
 	
 	F_temp_code = ((int32_t)ADCfactorK_F * ADC + (int32_t)ADCfactorB_F) >> 16;
@@ -45,6 +45,6 @@ void get_temp(void)
 	
 	for (uint8_t i = 0; i < 2; ++i)
 	{
-		RegNum3x[i + 4] = temp_C.buff[i];
+		RegNum3x[i + 4] = temp_F.buff[1 - i];
 	}
 }
