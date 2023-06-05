@@ -17,8 +17,9 @@ unsigned char cmRcBuf0[MAX_LENGHT_REC_BUF] ; //буфер принимаемых данных
 unsigned char cmTrBuf0[MAX_LENGHT_TR_BUF] ; //буфер передаваемых данных
 volatile unsigned char Slave_ID = DEFAULT_SLAVE_ID;
 
-volatile unsigned char Change_Parametrs_Is_Recieved = 0;//≈сли равна 1, значит пришел пакет с новыми настройками 
+volatile unsigned char Change_Parametrs_Is_Recieved = 0;//≈сли бит 0 равен 1, значит пришел пакет с новыми настройками 
 							//скорости передачи устройства
+							//≈сли бит 1 равен 1, значит отправлен последний пакет перед сменой параметров
 volatile unsigned char Baud_Divider = BAUD_DIVIDER;	//текущий делитель дл€ регистров UBRR
 
 unsigned char ModBus(unsigned char NumByte);
@@ -345,7 +346,7 @@ if((reg_adress == 0) && ((value == 9600) || (value == 14400)
 {
 
 	RegNum4x[reg_adress] = value;
-	Change_Parametrs_Is_Recieved = 1;
+	Change_Parametrs_Is_Recieved |= 1;
 	cmTrBuf0[1] = cmRcBuf0[1];
 	cmTrBuf0[2] = cmRcBuf0[2];
 	cmTrBuf0[3] = cmRcBuf0[3];
@@ -353,6 +354,7 @@ if((reg_adress == 0) && ((value == 9600) || (value == 14400)
 	cmTrBuf0[5] = cmRcBuf0[5];
 	cmTrBuf0[6] = cmRcBuf0[6];
 	cmTrBuf0[7] = cmRcBuf0[7];
+
 	Baud_Divider = F_CPU/(RegNum4x[reg_adress] * 16.0) - 1;
 	
 	return 8;
@@ -431,15 +433,23 @@ else
 {
     StopTrans();
     TrCount=0;
-	if (Change_Parametrs_Is_Recieved == 1)
+	if ((Change_Parametrs_Is_Recieved & 1) == 1)
 	{
-		Change_Parametrs_Is_Recieved = 0;
-		UBRRHi = Hi(Baud_Divider);
-		UBRRLow = Low(Baud_Divider);
+		Change_Parametrs_Is_Recieved = 0b10;
 	}
 
 } //end else
 }//end ISR(USART_UDRE_vect)
+
+ISR(USART_TXC_vect)
+{
+	if ((Change_Parametrs_Is_Recieved & 0b10) != 0)
+	{
+		Change_Parametrs_Is_Recieved = 0;
+		UBRRHi = Hi(Baud_Divider);
+		UBRRLow = Low(Baud_Divider);	
+	}
+}
 
 
 //прерывание таймера/счетчика 0 по переполнению

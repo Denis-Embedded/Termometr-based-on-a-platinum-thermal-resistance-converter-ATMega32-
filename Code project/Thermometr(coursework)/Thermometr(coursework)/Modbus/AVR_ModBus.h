@@ -35,7 +35,7 @@
 #define UBRRHi  UBRRH
 #define UBRRLow UBRRL
 #define UCSRA_CLR() UCSRA=0
-#define UCSRB_SET() UCSRB=1<<RXEN|1<<TXEN|1<<RXCIE|0<<TXCIE
+#define UCSRB_SET() UCSRB=1<<RXEN|1<<TXEN|1<<RXCIE|1<<TXCIE
 #define UCSRC_SET() UCSRC=1<<URSEL|1<<UCSZ0|1<<UCSZ1 //8bit, Even, 1stop.bit
 
 //ModBus
@@ -76,10 +76,10 @@
 
 
 //регистры (modbus)  
-unsigned char RegNum0x[(QUANTITY_REG_0X+7)/8];//1-9999 Discrete Output Coils
-unsigned char RegNum1x[(QUANTITY_REG_1X+7)/8];//10001-19999 Discrete Input Contacts
-unsigned int RegNum3x[QUANTITY_REG_3X];//30001-39999 Analog Input Registers
-unsigned int RegNum4x[QUANTITY_REG_4X];//40001-49999 Analog Output Holding Registers
+volatile unsigned char RegNum0x[(QUANTITY_REG_0X+7)/8];//1-9999 Discrete Output Coils
+volatile unsigned char RegNum1x[(QUANTITY_REG_1X+7)/8];//10001-19999 Discrete Input Contacts
+volatile unsigned int RegNum3x[QUANTITY_REG_3X];//30001-39999 Analog Input Registers
+volatile unsigned int RegNum4x[QUANTITY_REG_4X];//40001-49999 Analog Output Holding Registers
 
 void InitModBus(void);
 void CheckModBus(void);
